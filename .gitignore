@@ -1,0 +1,4 @@
+.venv
+.vscode
+static/output
+uploads
