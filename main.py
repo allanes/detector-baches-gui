@@ -111,7 +111,7 @@ class GUI():
         
         self.crear_panel_pedido_ruta(frame_config_parametros).grid(column=0, row=0, columnspan=3, **styling_grid)
         self.crear_panel_modelo(frame_config_parametros).grid(column=0, row=1, **styling_grid)
-        self.crear_panel_deteccion_cfg(frame_config_parametros).grid(column=0, row=2, **styling_grid)
+        self.crear_panel_parametros_deteccion(frame_config_parametros).grid(column=0, row=2, **styling_grid)
         self.crear_panel_etiquetas(frame_config_parametros).grid(column=1, row=1, rowspan=2, **styling_grid)
         self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=2, row=1, rowspan=2, **styling_grid)
         
@@ -154,13 +154,13 @@ class GUI():
         self.var_modelo_elegido.set(lista_nombres_modelos[0])
         
         ttk.Label(frame, text='Modelo').grid(column=0, row=0)
-        combo = ttk.Combobox(frame, values=lista_nombres_modelos, textvariable=self.var_modelo_elegido)
-        combo.bind('<<ComboboxSelected>>', self.recrear_panel_etiquetas)
+        combo = ttk.Combobox(frame, values=lista_nombres_modelos, textvariable=self.var_modelo_elegido, state='readonly')
         combo.grid(column=0, row=1)
+        combo.bind('<<ComboboxSelected>>', self.actualizar_dependencias_modelo)
         
         return frame
     
-    def crear_panel_deteccion_cfg(self, parent_frame) -> ttk.Frame:
+    def crear_panel_parametros_deteccion(self, parent_frame) -> ttk.Frame:
         var_iou_elegido = DoubleVar(value=0.25)
         var_confianza_elegida = DoubleVar(value=0.20)
         frame = ttk.Frame(parent_frame)
@@ -191,25 +191,25 @@ class GUI():
         return frame
     
     def crear_panel_parametros_entrenamiento(self, parent_frame) -> ttk.Frame:
-        ruta_base = os.getenv('RUTA_BASE_MODELOS')
-        ruta_opts = ruta_base + '/' + self.var_modelo_elegido.get() + '/opt.yaml'
-        file = open(ruta_opts, 'r')
-        training_params:dict = yaml.load(file, Loader=yaml.SafeLoader)
-        training_params = yaml.dump(training_params, line_break='\n')
+        training_params = predict.get_training_params(self.var_modelo_elegido.get())
+        
         frame = ttk.Frame(parent_frame)
         
         ttk.Label(frame, text='Parametros de entrenamiento').grid(column=0, row=0)
-        widget_params_entrenamiento = Text(frame, width=40)
-        widget_params_entrenamiento.grid(column=0, row=1)
+        self.widget_params_entrenamiento = Text(frame, width=40)
+        self.widget_params_entrenamiento.grid(column=0, row=1)
         
-        widget_params_entrenamiento.insert('0.0', training_params)        
+        self.widget_params_entrenamiento.insert('0.0', training_params)
         
         return frame
     
-    def recrear_panel_etiquetas(self, other_var):
+    def actualizar_dependencias_modelo(self, other_var):
         print(f'other_var: {other_var}')
         self.panel_etiquetas = self.crear_panel_etiquetas(self.tab_configuracion)
         self.panel_etiquetas.grid(column=1, row=1, rowspan=2)
+        training_params = predict.get_training_params(self.var_modelo_elegido.get())
+        print(training_params)
+        self.widget_params_entrenamiento.insert('0.0', training_params)
         
 if __name__ == '__main__':
     gui = GUI()

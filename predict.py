@@ -53,6 +53,15 @@ def get_lista_etiquetas(nombre_modelo:str)->list[str]:
     
     return lista_etiquetas
 
+def get_training_params(nombre_modelo:str) -> str:
+    ruta_base = os.getenv('RUTA_BASE_MODELOS')
+    ruta_opts = ruta_base + '/' + nombre_modelo + '/opt.yaml'
+    file = open(ruta_opts, 'r')
+    training_params:dict = yaml.load(file, Loader=yaml.SafeLoader)
+    training_params = yaml.dump(training_params, line_break='\n')
+    
+    return training_params
+
 @lru_cache(None)
 def recuperar_metadatos_modelos() -> list[ModelMetadata]:
     ruta_base = os.getenv('RUTA_BASE_MODELOS')
