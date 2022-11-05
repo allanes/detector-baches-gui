@@ -108,7 +108,7 @@ def getMetadataByName(nombre:str) -> ModelMetadata:
     
     print('No se encontro el modelo')
     
-def run(ruta_archivo_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 0.25, lista_clases: list[str] = None):
+def run(ruta_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 0.25, lista_clases: list[str] = None):
     RUTA_BASE_YOLOS = os.getenv('RUTA_BASE_YOLOS')
     modelo = getMetadataByName(nombre_modelo)
     print(f'\nUsando modelo {modelo.nombre}\n')
@@ -125,7 +125,7 @@ def run(ruta_archivo_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:
         f'--weights {modelo.ruta_pesos} ' +\
         f'--img-size {modelo.image_size} ' +\
         f'--conf-thres {confianza} ' +\
-        f'--source {ruta_archivo_entrada} ' +\
+        f'--source {ruta_entrada} ' +\
         f'--iou-thres {iou} ' +\
         f'--name {carpeta_salida_nueva} ' +\
         f'--project {carpeta_salida_base} ' +\
@@ -141,22 +141,11 @@ def run(ruta_archivo_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:
     print('Llamada:\n' + cadena + '\n')
     os.system(cadena)
     
-    nombre_archivo_entrada = os.path.split(ruta_archivo_entrada)[1]
-    nombre_archivo_salida:str = nombre_archivo_entrada
+    ruta_salida = carpeta_salida_base + '/' + carpeta_salida_nueva
+    if not len(os.listdir(ruta_salida)): return None
     
-    mapa_extensiones = {
-        '.MOV': '.mp4',
-        '.mov': '.mp4',
-        '.mkv': '.mp4',
-    }
-    extension = os.path.splitext(nombre_archivo_salida)[1]
-    
-    if extension in mapa_extensiones.keys():
-        nombre_archivo_salida = os.path.splitext(nombre_archivo_salida)[0] + mapa_extensiones[extension]
-    
-    ruta_archivo_salida = carpeta_salida_base + '/' + carpeta_salida_nueva + '/' + nombre_archivo_salida
-    
-    return ruta_archivo_salida
+    return ruta_salida
+
     
 if __name__ == '__main__':
     pass

@@ -100,29 +100,16 @@ class GUI():
         modo = self.var_modo_etiqueta_elegida.get()
         lista_clases_deseadas = lista_clases_tildadas if modo=='Incluir' else lista_clases_destildadas
         
-        ruta_archivo_generado = predict.run(
+        ruta_salida = predict.run(
             self.ruta_entrada.get(),
             nombre_modelo=self.var_modelo_elegido.get(),
             confianza=self.var_confianza_elegida.get(),
             iou=self.var_iou_elegido.get(),
             lista_clases=lista_clases_deseadas
         )
-        ruta_archivo_generado = os.path.abspath(ruta_archivo_generado)
-        print('Salida generada: ' + ruta_archivo_generado)
+        ruta_salida = os.path.abspath(ruta_salida)
         
-        if ruta_archivo_generado.split('.')[-1] == 'mp4':
-            self.videoplayer.load(ruta_archivo_generado)
-            self.videoplayer.pack(expand=True, fill="both")
-
-            self.videoplayer.play() # play the video
-        else:            
-            image = Image.open(ruta_archivo_generado)
-            image = ImageTk.PhotoImage(image)
-            
-            # self.output_label.configure(image=image)
-            # self.output_label.image=image
-            # image = PhotoImage(file=ruta_archivo_generado)
-            # ttk.Label(self.tab_configuracion, image=image).grid(column=0, row=6, sticky=(W,E,N,S))
+        print('Salida generada en: ' + ruta_salida)
             
    
     def crear_frame_principal_entradas(self, parent_frame):
