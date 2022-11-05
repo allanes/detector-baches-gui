@@ -33,11 +33,11 @@ class GUI():
         self.root.geometry(f'{VENTANA_ANCHO}x{VENTANA_ALTO}')
         
         # Creates Main Content Frame
-        self.input_params_frame = ttk.Frame(self.root).grid(column=0, row=0, sticky=(N, W, E, S))
+        self.input_params_frame = ttk.Frame(self.root)
+        self.input_params_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         
         # Declarar variables sincronizadas
         self.crear_variables_deteccion()
-        
         self.tab_configuracion = self.crear_frame_principal_entradas(parent_frame=self.input_params_frame)
         self.tab_configuracion.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=2)
         
@@ -57,15 +57,16 @@ class GUI():
         
         
         # Panel de pedido de ruta de entrada
-        self.var_tipo_entrada_elegida = StringVar()
+        self.var_tipo_entrada_elegida = StringVar(value='Archivo')
         self.ruta_entrada = StringVar()
         
         # Panel de modelo
         self.var_modelo_elegido = StringVar()
         
         # Panel etiquetas
-        self.var_etiqueta_elegida = StringVar()
-        self.var_modo_etiqueta_elegida = StringVar()
+        self.lista_checkbuttons = []
+        self.var_etiqueta_elegida = BooleanVar()
+        self.var_modo_etiqueta_elegida = StringVar(value='Incluir')
         
     def funcion_panel_pedido_ruta(self):
         if self.var_tipo_entrada_elegida.get() == 'Carpeta':
@@ -144,6 +145,7 @@ class GUI():
         self.btn_archivo = ttk.Button(frame,text='Seleccionar', command=lambda: self.ruta_entrada.set(filedialog.askopenfilename()))
         self.btn_archivo.grid(column=2, row=2)
         
+        self.funcion_panel_pedido_ruta()
         return frame
     
     
@@ -183,11 +185,16 @@ class GUI():
         ttk.Radiobutton(frame, text='Incluir', variable=self.var_modo_etiqueta_elegida, value='Incluir').grid(column=0, row=1)
         ttk.Radiobutton(frame, text='Excluir', variable=self.var_modo_etiqueta_elegida, value='Excluir').grid(column=1, row=1)
         
+        lista_vars_checkbuttons = [StringVar(value=True) for _ in range(len(lista_etiquetas))]
         for idx in range(10):
             if idx < len(lista_etiquetas):
-                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=self.var_etiqueta_elegida).grid(column=0, row=2+idx, sticky=(E,W))
+                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=lista_vars_checkbuttons[idx]).grid(column=0, row=2+idx, sticky=(E,W))
+                self.lista_checkbuttons.append(lista_vars_checkbuttons[idx])
             else:
                 ttk.Checkbutton(frame, text='Sin definir', variable=self.var_etiqueta_elegida, state='disabled').grid(column=0, row=2+idx, sticky=(E,W))
+        
+        self.lista_checkbuttons = lista_vars_checkbuttons        
+        
         return frame
     
     def crear_panel_parametros_entrenamiento(self, parent_frame) -> ttk.Frame:
@@ -205,12 +212,14 @@ class GUI():
     
     def actualizar_dependencias_modelo(self, other_var):
         print(f'other_var: {other_var}')
-        self.panel_etiquetas = self.crear_panel_etiquetas(self.tab_configuracion)
-        self.panel_etiquetas.grid(column=1, row=1, rowspan=2)
+        panel_etiquetas = self.crear_panel_etiquetas(self.tab_configuracion)
+        panel_etiquetas.grid(column=1, row=1, rowspan=2)
         training_params = predict.get_training_params(self.var_modelo_elegido.get())
-        print(training_params)
+        
+        # Params entrenamiento
         self.widget_params_entrenamiento.insert('0.0', training_params)
         
+            
 if __name__ == '__main__':
     gui = GUI()
     gui.start()
