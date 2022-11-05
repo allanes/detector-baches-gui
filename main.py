@@ -4,7 +4,10 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from PIL import ImageTk, Image
+from pyparsing import col
 from tkVideoPlayer import TkinterVideo
+import yaml
+from predict import recuperar_metadatos_modelos as get_metadatos_modelos
 import predict
 from dotenv import load_dotenv
 
@@ -12,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv('rutas_cfg')
 RUTA_SALIDAS = os.getenv('RUTA_SALIDAS')
 VENTANA_TITULO = 'Mantenimiento Vial con I.A.'
-VENTANA_ANCHO = 750
+VENTANA_ANCHO = 1100
 VENTANA_ALTO = 600
 
 
@@ -20,7 +23,7 @@ VENTANA_ALTO = 600
 class ParamsDeteccion():
     confianza: float
     iou: float
-
+         
 
 class GUI():
     def __init__(self):
@@ -30,95 +33,197 @@ class GUI():
         self.root.geometry(f'{VENTANA_ANCHO}x{VENTANA_ALTO}')
         
         # Creates Main Content Frame
-        self.mainframe = ttk.Frame(self.root).grid(column=0, row=0, sticky=(N, W, E, S))
-        
-        # Create Tab Control
-        self.tab_control = ttk.Notebook(self.mainframe)
-        self.tab_control.grid(column=1, row=3, sticky=(N,W,E,S))
+        self.input_params_frame = ttk.Frame(self.root)
+        self.input_params_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         
         # Declarar variables sincronizadas
         self.crear_variables_deteccion()
+        self.tab_configuracion = self.crear_frame_principal_entradas(parent_frame=self.input_params_frame)
+        self.tab_configuracion.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=2)
         
-        # Crear pestañas
-        # self.set_defaults()
-        self.tab_configuracion = self.agregar_frame_config_params(parent_frame=self.tab_control, idx_pestaña=0)
         
-        # Registrar pestañas        
-        self.tab_control.add(self.tab_configuracion, text='Configuracion')
-        
+    def start(self):
         # Make it start the Event Loop
         self.root.mainloop()
         
     def crear_variables_deteccion(self):
-        self.ruta_entrada = StringVar()
+        # REVISAR
         self.ruta_salida = StringVar(value=RUTA_SALIDAS)
         self.nombre_modelo = StringVar()
-        self.confianza_var = DoubleVar()
-        self.iou_var = DoubleVar()
-
+        
+        # Generales
+        
+        
+        # Panel de pedido de ruta de entrada
+        self.var_tipo_entrada_elegida = StringVar(value='Archivo')
+        self.ruta_entrada = StringVar()
+        
+        # Panel de modelo
+        self.var_modelo_elegido = StringVar()
+        
+        # Panel etiquetas
+        self.lista_vars_checkbuttons = []
+        self.var_etiqueta_elegida = BooleanVar()
+        self.var_modo_etiqueta_elegida = StringVar(value='Incluir')
+        
+        # Panel de parametros de inferencia
+        self.var_confianza_elegida = DoubleVar(value=0.25)
+        self.var_iou_elegido = DoubleVar(value=0.45)
+        
+    def funcion_panel_pedido_ruta(self):
+        if self.var_tipo_entrada_elegida.get() == 'Carpeta':
+            self.entry_archivo.state(['disabled'])
+            self.btn_archivo.state(['disabled'])
+            self.entry_carpeta.state(['!disabled'])
+            self.btn_carpeta.state(['!disabled'])
+            return    
+        
+        if self.var_tipo_entrada_elegida.get() == 'Archivo':
+            self.entry_carpeta.state(['disabled'])
+            self.btn_carpeta.state(['disabled'])
+            self.entry_archivo.state(['!disabled'])
+            self.btn_archivo.state(['!disabled'])
+            return    
+        
     
     def preparar_llamada_y_llamar(self):
         print('Preparando llamada')
-        ruta_archivo_generado = predict.run(self.ruta_entrada.get())
-        ruta_archivo_generado = os.path.abspath(ruta_archivo_generado)
-        print('Salida generada: ' + ruta_archivo_generado)
+        lista_clases_tildadas = []
+        lista_clases_destildadas = []
+        for var_chkbtn in self.lista_vars_checkbuttons:
+            if var_chkbtn.get().startswith('-'):
+                lista_clases_destildadas.append(var_chkbtn.get()[1:])
+            else:
+                lista_clases_tildadas.append(var_chkbtn.get())
         
-        if ruta_archivo_generado.split('.')[-1] == 'mp4':
-            self.videoplayer.load(ruta_archivo_generado)
-            self.videoplayer.pack(expand=True, fill="both")
-
-            self.videoplayer.play() # play the video
-        else:            
-            image = Image.open(ruta_archivo_generado)
-            image = ImageTk.PhotoImage(image)
+        
+        modo = self.var_modo_etiqueta_elegida.get()
+        lista_clases_deseadas = lista_clases_tildadas if modo=='Incluir' else lista_clases_destildadas
+        
+        ruta_salida = predict.run(
+            self.ruta_entrada.get(),
+            nombre_modelo=self.var_modelo_elegido.get(),
+            confianza=self.var_confianza_elegida.get(),
+            iou=self.var_iou_elegido.get(),
+            lista_clases=lista_clases_deseadas
+        )
+        ruta_salida = os.path.abspath(ruta_salida)
+        
+        print('Salida generada en: ' + ruta_salida)
             
-            self.output_label.configure(image=image)
-            self.output_label.image=image
-            # image = PhotoImage(file=ruta_archivo_generado)
-            # ttk.Label(self.tab_configuracion, image=image).grid(column=0, row=6, sticky=(W,E,N,S))
-    
-    def crear_panel_pedido_ruta(self, parent_frame, col, row, texto, variable, texto_boton = 'Seleccionar'):
-            
-        frame_entrada = ttk.LabelFrame(parent_frame)
-        frame_entrada.grid(column=col, row=row, sticky=(N,S,W,E), columnspan=3)        
-        # Declare and place labels        
-        ttk.Label(frame_entrada, text=texto).grid(column=0, row=2)        
-        # Declare and place entries
-        ttk.Entry(frame_entrada, textvariable=variable, width=100).grid(column=2, row=2)        
-        #Declare and place buttons
-        ttk.Button(frame_entrada,text=texto_boton, command=lambda: variable.set(filedialog.askopenfilename())).grid(column=3, row=2)
-        
-        
-    def agregar_frame_config_params(self, parent_frame, idx_pestaña):
-        # Declaro Frame de Geometria
+   
+    def crear_frame_principal_entradas(self, parent_frame):
         frame_config_parametros = ttk.Frame(parent_frame)
-        frame_config_parametros.grid(column=idx_pestaña, row=0, sticky=(N,S,E,W), columnspan=2)
         
-        self.crear_panel_pedido_ruta(frame_config_parametros, col=0, row=0, texto='Entrada', variable=self.ruta_entrada)
-        self.crear_panel_pedido_ruta(frame_config_parametros, col=0, row=1, texto='Salida', variable=self.ruta_salida)
+        styling_grid = {}
         
-        # Creo panel de config de parametros de inferencia
-        frame_parametros_inferencia = ttk.Frame(frame_config_parametros).grid(column=0, row=3)
-        # Declare and place labels
-        ttk.Label(frame_config_parametros, text="Confianza").grid(column=0, row=3, columnspan=1)
-        ttk.Label(frame_config_parametros, text="IOU").grid(column=0, row=4, columnspan=1)
-        # Declare entries
-        confianza_entry = ttk.Entry(frame_config_parametros, width=5, textvariable=self.confianza_var)
-        iou_entry = ttk.Entry(frame_config_parametros, width=5, textvariable=self.iou_var)
-        # Place entries
-        confianza_entry.grid(column=1, row=3)
-        iou_entry.grid(column=1, row=4)
+        self.crear_panel_pedido_ruta(frame_config_parametros).grid(column=0, row=0, columnspan=3, **styling_grid)
+        self.crear_panel_modelo(frame_config_parametros).grid(column=0, row=1, **styling_grid)
+        self.crear_panel_parametros_deteccion(frame_config_parametros).grid(column=0, row=2, **styling_grid)
+        self.crear_panel_etiquetas(frame_config_parametros).grid(column=1, row=1, rowspan=2, **styling_grid)
+        self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=2, row=1, rowspan=2, **styling_grid)
         
-        # Output label
-        self.output_label = ttk.Label(frame_config_parametros)
-        self.output_label.grid(column=0, row=6, sticky=(W,E,N,S))
-        self.videoplayer = TkinterVideo(master=self.root, scaled=False)
+        for frame in frame_config_parametros.winfo_children():
+            frame['borderwidth'] = 2,
+            frame['relief'] = 'raised',
+            frame['padding'] = (10,5)
         
-        # Seccion detectar
-        ttk.Button(frame_config_parametros,text='Inferir', command=self.preparar_llamada_y_llamar).grid(column=0, row=5)
-                
+        ttk.Button(frame_config_parametros,text='Inferir', width=20, command=self.preparar_llamada_y_llamar).grid(column=0, row=3)
+        
         return frame_config_parametros
+    
+    def crear_panel_pedido_ruta(self, parent_frame) -> ttk.Frame:
+        ANCHO_CAMPO_TEXTO = 80
         
+        frame = ttk.Frame(parent_frame)
         
+        ttk.Label(frame, text='Elegir entrada').grid(column=0, row=0)
+        # Control para entrada de carpeta
+        ttk.Radiobutton(frame, text='Carpeta', variable=self.var_tipo_entrada_elegida, value='Carpeta',command=self.funcion_panel_pedido_ruta).grid(column=0, row=1)
+        self.entry_carpeta = ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO, textvariable=self.ruta_entrada)
+        self.entry_carpeta.grid(column=1, row=1)
+        self.btn_carpeta = ttk.Button(frame,text='Seleccionar', command=lambda: self.ruta_entrada.set(filedialog.askdirectory()))
+        self.btn_carpeta.grid(column=2, row=1)
+       
+        # Control para entrada de archivo
+        ttk.Radiobutton(frame, text='Archivo', variable=self.var_tipo_entrada_elegida, value='Archivo',command=self.funcion_panel_pedido_ruta).grid(column=0, row=2)
+        self.entry_archivo = ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO, textvariable=self.ruta_entrada)
+        self.entry_archivo.grid(column=1, row=2)
+        self.btn_archivo = ttk.Button(frame,text='Seleccionar', command=lambda: self.ruta_entrada.set(filedialog.askopenfilename()))
+        self.btn_archivo.grid(column=2, row=2)
+        
+        self.funcion_panel_pedido_ruta()
+        return frame
+    
+    
+    def crear_panel_modelo(self, parent_frame) -> ttk.Frame:
+        frame = ttk.Frame(parent_frame)
+        lista_nombres_modelos = [metadatos.nombre for metadatos in get_metadatos_modelos()]
+        
+        self.var_modelo_elegido.set(lista_nombres_modelos[0])
+        
+        ttk.Label(frame, text='Modelo').grid(column=0, row=0)
+        combo = ttk.Combobox(frame, values=lista_nombres_modelos, textvariable=self.var_modelo_elegido, state='readonly')
+        combo.grid(column=0, row=1)
+        combo.bind('<<ComboboxSelected>>', self.actualizar_dependencias_modelo)
+        
+        return frame
+    
+    def crear_panel_parametros_deteccion(self, parent_frame) -> ttk.Frame:
+        frame = ttk.Frame(parent_frame)
+        
+        ttk.Label(frame, text='Parametros de inferencia').grid(column=0, row=0)
+        ttk.Label(frame, text='IOU').grid(column=0, row=1)
+        ttk.Entry(frame, textvariable=self.var_iou_elegido, width=10).grid(column=1, row=1)
+        ttk.Label(frame, text='Confianza').grid(column=0, row=2)
+        ttk.Entry(frame, textvariable=self.var_confianza_elegida, width=10).grid(column=1, row=2)
+        
+        return frame
+    
+    def crear_panel_etiquetas(self, parent_frame) -> ttk.Frame:
+        modelo_elegido = self.var_modelo_elegido.get()
+        lista_etiquetas = predict.get_lista_etiquetas(nombre_modelo = modelo_elegido)
+        
+        frame = ttk.Frame(parent_frame)
+        
+        ttk.Label(frame, text='Etiquetas').grid(column=0, row=0)
+        ttk.Radiobutton(frame, text='Incluir', variable=self.var_modo_etiqueta_elegida, value='Incluir').grid(column=0, row=1)
+        ttk.Radiobutton(frame, text='Excluir', variable=self.var_modo_etiqueta_elegida, value='Excluir').grid(column=1, row=1)
+        
+        lista_vars_checkbuttons = [StringVar(value=f'{idx}') for idx in range(len(lista_etiquetas))]
+        for idx in range(10):
+            if idx < len(lista_etiquetas):
+                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=lista_vars_checkbuttons[idx], onvalue=f'{idx}', offvalue=f'-{idx}').grid(column=0, row=2+idx, sticky=(E,W))
+            else:
+                ttk.Checkbutton(frame, text='Sin definir', variable=self.var_etiqueta_elegida, state='disabled').grid(column=0, row=2+idx, sticky=(E,W))
+        
+        self.lista_vars_checkbuttons = lista_vars_checkbuttons.copy()
+        
+        return frame
+    
+    def crear_panel_parametros_entrenamiento(self, parent_frame) -> ttk.Frame:
+        training_params = predict.get_training_params(self.var_modelo_elegido.get())
+        
+        frame = ttk.Frame(parent_frame)
+        
+        ttk.Label(frame, text='Parametros de entrenamiento').grid(column=0, row=0)
+        self.widget_params_entrenamiento = Text(frame, width=40)
+        self.widget_params_entrenamiento.grid(column=0, row=1)
+        
+        self.widget_params_entrenamiento.insert('0.0', training_params)
+        
+        return frame
+    
+    def actualizar_dependencias_modelo(self, other_var):
+        print(f'other_var: {other_var}')
+        panel_etiquetas = self.crear_panel_etiquetas(self.tab_configuracion)
+        panel_etiquetas.grid(column=1, row=1, rowspan=2)
+        training_params = predict.get_training_params(self.var_modelo_elegido.get())
+        
+        # Params entrenamiento
+        self.widget_params_entrenamiento.insert('0.0', training_params)
+        
+            
 if __name__ == '__main__':
     gui = GUI()
+    gui.start()
