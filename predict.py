@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import yaml
 from yaml.loader import SafeLoader
 
+load_dotenv('rutas_cfg.env')
+
 class YoloRutas(str, Enum):
     V5 = 'yolov5'
     V7 = 'yolov7'
@@ -31,8 +33,8 @@ class ModelMetadata():
     image_size: int
     
 
-def recuperar_metadatos_modelos(ruta_base:str) -> list[ModelMetadata]:
-    
+def recuperar_metadatos_modelos() -> list[ModelMetadata]:
+    ruta_base = os.getenv('RUTA_BASE_MODELOS')
     lista_modelos = []
     for carpeta in os.listdir(ruta_base):
         file = open(f'{ruta_base}/{carpeta}/opt.yaml', 'r')
@@ -70,10 +72,8 @@ def recuperar_metadatos_modelos(ruta_base:str) -> list[ModelMetadata]:
 
 
 def run(ruta_archivo_entrada:str, confianza:float = 0.2, iou:float = 0.25):
-    load_dotenv('rutas_cfg.env')
-    RUTA_BASE_MODELOS = os.getenv('RUTA_BASE_MODELOS')
     RUTA_BASE_YOLOS = os.getenv('RUTA_BASE_YOLOS')
-    modelos = recuperar_metadatos_modelos(ruta_base = RUTA_BASE_MODELOS)
+    modelos = recuperar_metadatos_modelos()
     modelo = modelos[0]
     print(f'\nUsando modelo {modelo.nombre}\n')
     

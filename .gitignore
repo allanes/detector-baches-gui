@@ -2,3 +2,4 @@
 .vscode
 static/output
 uploads
+__pycache__
