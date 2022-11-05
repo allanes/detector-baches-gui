@@ -7,6 +7,7 @@ from PIL import ImageTk, Image
 from pyparsing import col
 from tkVideoPlayer import TkinterVideo
 import yaml
+from predict import recuperar_metadatos_modelos as get_metadatos_modelos
 import predict
 from dotenv import load_dotenv
 
@@ -22,7 +23,7 @@ VENTANA_ALTO = 600
 class ParamsDeteccion():
     confianza: float
     iou: float
-
+         
 
 class GUI():
     def __init__(self):
@@ -37,7 +38,7 @@ class GUI():
         # Declarar variables sincronizadas
         self.crear_variables_deteccion()
         
-        self.tab_configuracion = self.crear_frame_principal_entrada(parent_frame=self.input_params_frame)
+        self.tab_configuracion = self.crear_frame_principal_entradas(parent_frame=self.input_params_frame)
         self.tab_configuracion.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=2)
         
         
@@ -46,12 +47,41 @@ class GUI():
         self.root.mainloop()
         
     def crear_variables_deteccion(self):
-        self.ruta_entrada = StringVar()
+        # REVISAR
         self.ruta_salida = StringVar(value=RUTA_SALIDAS)
         self.nombre_modelo = StringVar()
         self.confianza_var = DoubleVar()
         self.iou_var = DoubleVar()
-
+        
+        # Generales
+        
+        
+        # Panel de pedido de ruta de entrada
+        self.var_tipo_entrada_elegida = StringVar()
+        self.ruta_entrada = StringVar()
+        
+        # Panel de modelo
+        self.var_modelo_elegido = StringVar()
+        
+        # Panel etiquetas
+        self.var_etiqueta_elegida = StringVar()
+        self.var_modo_etiqueta_elegida = StringVar()
+        
+    def funcion_panel_pedido_ruta(self):
+        if self.var_tipo_entrada_elegida.get() == 'Carpeta':
+            self.entry_archivo.state(['disabled'])
+            self.btn_archivo.state(['disabled'])
+            self.entry_carpeta.state(['!disabled'])
+            self.btn_carpeta.state(['!disabled'])
+            return    
+        
+        if self.var_tipo_entrada_elegida.get() == 'Archivo':
+            self.entry_carpeta.state(['disabled'])
+            self.btn_carpeta.state(['disabled'])
+            self.entry_archivo.state(['!disabled'])
+            self.btn_archivo.state(['!disabled'])
+            return    
+        
     
     def preparar_llamada_y_llamar(self):
         print('Preparando llamada')
@@ -72,9 +102,9 @@ class GUI():
             self.output_label.image=image
             # image = PhotoImage(file=ruta_archivo_generado)
             # ttk.Label(self.tab_configuracion, image=image).grid(column=0, row=6, sticky=(W,E,N,S))
-    
-    
-    def crear_frame_principal_entrada(self, parent_frame):
+            
+   
+    def crear_frame_principal_entradas(self, parent_frame):
         frame_config_parametros = ttk.Frame(parent_frame)
         
         styling_grid = {}
@@ -96,32 +126,37 @@ class GUI():
     
     def crear_panel_pedido_ruta(self, parent_frame) -> ttk.Frame:
         ANCHO_CAMPO_TEXTO = 80
-        var_tipo_entrada_elegida = StringVar()
         
         frame = ttk.Frame(parent_frame)
         
         ttk.Label(frame, text='Elegir entrada').grid(column=0, row=0)
         # Control para entrada de carpeta
-        ttk.Radiobutton(frame, text='Carpeta', variable=var_tipo_entrada_elegida, value='Carpeta').grid(column=0, row=1)
-        ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO).grid(column=1, row=1)
-        ttk.Button(frame,text='Seleccionar').grid(column=2, row=1)
+        ttk.Radiobutton(frame, text='Carpeta', variable=self.var_tipo_entrada_elegida, value='Carpeta',command=self.funcion_panel_pedido_ruta).grid(column=0, row=1)
+        self.entry_carpeta = ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO, textvariable=self.ruta_entrada)
+        self.entry_carpeta.grid(column=1, row=1)
+        self.btn_carpeta = ttk.Button(frame,text='Seleccionar', command=lambda: self.ruta_entrada.set(filedialog.askdirectory()))
+        self.btn_carpeta.grid(column=2, row=1)
        
         # Control para entrada de archivo
-        ttk.Radiobutton(frame, text='Archivo', variable=var_tipo_entrada_elegida, value='Archivo').grid(column=0, row=2)
-        ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO).grid(column=1, row=2)
-        ttk.Button(frame,text='Seleccionar').grid(column=2, row=2)
+        ttk.Radiobutton(frame, text='Archivo', variable=self.var_tipo_entrada_elegida, value='Archivo',command=self.funcion_panel_pedido_ruta).grid(column=0, row=2)
+        self.entry_archivo = ttk.Entry(frame, width=ANCHO_CAMPO_TEXTO, textvariable=self.ruta_entrada)
+        self.entry_archivo.grid(column=1, row=2)
+        self.btn_archivo = ttk.Button(frame,text='Seleccionar', command=lambda: self.ruta_entrada.set(filedialog.askopenfilename()))
+        self.btn_archivo.grid(column=2, row=2)
         
         return frame
     
+    
     def crear_panel_modelo(self, parent_frame) -> ttk.Frame:
         frame = ttk.Frame(parent_frame)
-        metadatos_modelos = predict.recuperar_metadatos_modelos()
-        lista_modelos = [metadatos.nombre for metadatos in metadatos_modelos]
-        self.var_modelo_elegido = StringVar()
-        self.var_modelo_elegido.set(lista_modelos[0])
+        lista_nombres_modelos = [metadatos.nombre for metadatos in get_metadatos_modelos()]
+        
+        self.var_modelo_elegido.set(lista_nombres_modelos[0])
         
         ttk.Label(frame, text='Modelo').grid(column=0, row=0)
-        ttk.Combobox(frame, values=lista_modelos, textvariable=self.var_modelo_elegido).grid(column=0, row=1)
+        combo = ttk.Combobox(frame, values=lista_nombres_modelos, textvariable=self.var_modelo_elegido)
+        combo.bind('<<ComboboxSelected>>', self.recrear_panel_etiquetas)
+        combo.grid(column=0, row=1)
         
         return frame
     
@@ -139,25 +174,20 @@ class GUI():
         return frame
     
     def crear_panel_etiquetas(self, parent_frame) -> ttk.Frame:
-        metadatos_modelos = predict.recuperar_metadatos_modelos()
-        ruta_base = os.getenv('RUTA_BASE_YOLOS')
-        ruta_dataset_data = ruta_base + '/' + predict.DatasetRutas[metadatos_modelos[0].dataset_ver.name].value
-        file = open(ruta_dataset_data, 'r')
-        ds_data = yaml.load(file, Loader=yaml.SafeLoader)
-        lista_etiquetas = ds_data['names']
-        var_etiqueta_elegida = StringVar()
-        var_modo_etiqueta_elegida = StringVar()
+        modelo_elegido = self.var_modelo_elegido.get()
+        lista_etiquetas = predict.get_lista_etiquetas(nombre_modelo = modelo_elegido)
         
         frame = ttk.Frame(parent_frame)
         
         ttk.Label(frame, text='Etiquetas').grid(column=0, row=0)
-        ttk.Radiobutton(frame, text='Incluir', variable=var_modo_etiqueta_elegida, value='Incluir').grid(column=0, row=1)
-        ttk.Radiobutton(frame, text='Excluir', variable=var_modo_etiqueta_elegida, value='Excluir').grid(column=1, row=1)
+        ttk.Radiobutton(frame, text='Incluir', variable=self.var_modo_etiqueta_elegida, value='Incluir').grid(column=0, row=1)
+        ttk.Radiobutton(frame, text='Excluir', variable=self.var_modo_etiqueta_elegida, value='Excluir').grid(column=1, row=1)
         
-        etiqueta = lista_etiquetas[0]
-        for idx, etiqueta in enumerate(lista_etiquetas):
-            ttk.Checkbutton(frame, text=etiqueta, variable=var_etiqueta_elegida).grid(column=0, row=2+idx, sticky=(E,W))
-        
+        for idx in range(10):
+            if idx < len(lista_etiquetas):
+                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=self.var_etiqueta_elegida).grid(column=0, row=2+idx, sticky=(E,W))
+            else:
+                ttk.Checkbutton(frame, text='Sin definir', variable=self.var_etiqueta_elegida, state='disabled').grid(column=0, row=2+idx, sticky=(E,W))
         return frame
     
     def crear_panel_parametros_entrenamiento(self, parent_frame) -> ttk.Frame:
@@ -175,7 +205,11 @@ class GUI():
         widget_params_entrenamiento.insert('0.0', training_params)        
         
         return frame
-                
+    
+    def recrear_panel_etiquetas(self, other_var):
+        print(f'other_var: {other_var}')
+        self.panel_etiquetas = self.crear_panel_etiquetas(self.tab_configuracion)
+        self.panel_etiquetas.grid(column=1, row=1, rowspan=2)
         
 if __name__ == '__main__':
     gui = GUI()

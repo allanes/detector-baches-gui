@@ -1,3 +1,4 @@
+from functools import lru_cache
 import os
 from datetime import datetime
 from enum import Enum
@@ -31,8 +32,28 @@ class ModelMetadata():
     yolo_ver: YoloVersiones
     dataset_ver: DatasetVersiones
     image_size: int
-    
 
+
+def get_lista_etiquetas(nombre_modelo:str)->list[str]:
+    lista_metadatos = recuperar_metadatos_modelos()
+    
+    modelo = None    
+    for modelo in lista_metadatos:
+        if modelo.nombre == nombre_modelo: break
+    
+    if not modelo:
+        print(f'Modelo {nombre_modelo} no encontrado')
+        return []
+    
+    ruta_base = os.getenv('RUTA_BASE_YOLOS')
+    ruta_dataset_data = ruta_base + '/' + DatasetRutas[modelo.dataset_ver.name].value
+    file = open(ruta_dataset_data, 'r')
+    ds_data = yaml.load(file, Loader=yaml.SafeLoader)
+    lista_etiquetas = ds_data['names']
+    
+    return lista_etiquetas
+
+@lru_cache(None)
 def recuperar_metadatos_modelos() -> list[ModelMetadata]:
     ruta_base = os.getenv('RUTA_BASE_MODELOS')
     lista_modelos = []
