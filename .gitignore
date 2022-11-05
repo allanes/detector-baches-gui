@@ -4,3 +4,4 @@ static/output
 uploads
 __pycache__
 traced_model.pt
+outputs
