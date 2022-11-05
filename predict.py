@@ -100,11 +100,17 @@ def recuperar_metadatos_modelos() -> list[ModelMetadata]:
     
     return lista_modelos
 
-
-def run(ruta_archivo_entrada:str, confianza:float = 0.2, iou:float = 0.25):
+def getMetadataByName(nombre:str) -> ModelMetadata:
+    lista_modelos = recuperar_metadatos_modelos()
+    for modelo in lista_modelos:
+        if modelo.nombre == nombre:
+            return modelo
+    
+    print('No se encontro el modelo')
+    
+def run(ruta_archivo_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 0.25, lista_clases: list[str] = None):
     RUTA_BASE_YOLOS = os.getenv('RUTA_BASE_YOLOS')
-    modelos = recuperar_metadatos_modelos()
-    modelo = modelos[0]
+    modelo = getMetadataByName(nombre_modelo)
     print(f'\nUsando modelo {modelo.nombre}\n')
     
     # Armo rutas antes de la llamada
@@ -125,6 +131,9 @@ def run(ruta_archivo_entrada:str, confianza:float = 0.2, iou:float = 0.25):
         f'--project {carpeta_salida_base} ' +\
         f'--save-txt ' +\
         f'--save-conf'
+    
+    if lista_clases: cadena = f'{cadena} '+\
+        f'--classes {" ".join(lista_clases)}'
     
     if modelo.yolo_ver == YoloVersiones.V5:
         cadena = cadena + f' --data {ruta_dataset_data}'

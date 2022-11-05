@@ -50,8 +50,6 @@ class GUI():
         # REVISAR
         self.ruta_salida = StringVar(value=RUTA_SALIDAS)
         self.nombre_modelo = StringVar()
-        self.confianza_var = DoubleVar()
-        self.iou_var = DoubleVar()
         
         # Generales
         
@@ -64,9 +62,13 @@ class GUI():
         self.var_modelo_elegido = StringVar()
         
         # Panel etiquetas
-        self.lista_checkbuttons = []
+        self.lista_vars_checkbuttons = []
         self.var_etiqueta_elegida = BooleanVar()
         self.var_modo_etiqueta_elegida = StringVar(value='Incluir')
+        
+        # Panel de parametros de inferencia
+        self.var_confianza_elegida = DoubleVar(value=0.25)
+        self.var_iou_elegido = DoubleVar(value=0.45)
         
     def funcion_panel_pedido_ruta(self):
         if self.var_tipo_entrada_elegida.get() == 'Carpeta':
@@ -86,7 +88,25 @@ class GUI():
     
     def preparar_llamada_y_llamar(self):
         print('Preparando llamada')
-        ruta_archivo_generado = predict.run(self.ruta_entrada.get())
+        lista_clases_tildadas = []
+        lista_clases_destildadas = []
+        for var_chkbtn in self.lista_vars_checkbuttons:
+            if var_chkbtn.get().startswith('-'):
+                lista_clases_destildadas.append(var_chkbtn.get()[1:])
+            else:
+                lista_clases_tildadas.append(var_chkbtn.get())
+        
+        
+        modo = self.var_modo_etiqueta_elegida.get()
+        lista_clases_deseadas = lista_clases_tildadas if modo=='Incluir' else lista_clases_destildadas
+        
+        ruta_archivo_generado = predict.run(
+            self.ruta_entrada.get(),
+            nombre_modelo=self.var_modelo_elegido.get(),
+            confianza=self.var_confianza_elegida.get(),
+            iou=self.var_iou_elegido.get(),
+            lista_clases=lista_clases_deseadas
+        )
         ruta_archivo_generado = os.path.abspath(ruta_archivo_generado)
         print('Salida generada: ' + ruta_archivo_generado)
         
@@ -99,8 +119,8 @@ class GUI():
             image = Image.open(ruta_archivo_generado)
             image = ImageTk.PhotoImage(image)
             
-            self.output_label.configure(image=image)
-            self.output_label.image=image
+            # self.output_label.configure(image=image)
+            # self.output_label.image=image
             # image = PhotoImage(file=ruta_archivo_generado)
             # ttk.Label(self.tab_configuracion, image=image).grid(column=0, row=6, sticky=(W,E,N,S))
             
@@ -163,15 +183,13 @@ class GUI():
         return frame
     
     def crear_panel_parametros_deteccion(self, parent_frame) -> ttk.Frame:
-        var_iou_elegido = DoubleVar(value=0.25)
-        var_confianza_elegida = DoubleVar(value=0.20)
         frame = ttk.Frame(parent_frame)
         
         ttk.Label(frame, text='Parametros de inferencia').grid(column=0, row=0)
         ttk.Label(frame, text='IOU').grid(column=0, row=1)
-        ttk.Entry(frame, textvariable=var_iou_elegido, width=10).grid(column=1, row=1)
+        ttk.Entry(frame, textvariable=self.var_iou_elegido, width=10).grid(column=1, row=1)
         ttk.Label(frame, text='Confianza').grid(column=0, row=2)
-        ttk.Entry(frame, textvariable=var_confianza_elegida, width=10).grid(column=1, row=2)
+        ttk.Entry(frame, textvariable=self.var_confianza_elegida, width=10).grid(column=1, row=2)
         
         return frame
     
@@ -185,15 +203,14 @@ class GUI():
         ttk.Radiobutton(frame, text='Incluir', variable=self.var_modo_etiqueta_elegida, value='Incluir').grid(column=0, row=1)
         ttk.Radiobutton(frame, text='Excluir', variable=self.var_modo_etiqueta_elegida, value='Excluir').grid(column=1, row=1)
         
-        lista_vars_checkbuttons = [StringVar(value=True) for _ in range(len(lista_etiquetas))]
+        lista_vars_checkbuttons = [StringVar(value=f'{idx}') for idx in range(len(lista_etiquetas))]
         for idx in range(10):
             if idx < len(lista_etiquetas):
-                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=lista_vars_checkbuttons[idx]).grid(column=0, row=2+idx, sticky=(E,W))
-                self.lista_checkbuttons.append(lista_vars_checkbuttons[idx])
+                ttk.Checkbutton(frame, text=lista_etiquetas[idx], variable=lista_vars_checkbuttons[idx], onvalue=f'{idx}', offvalue=f'-{idx}').grid(column=0, row=2+idx, sticky=(E,W))
             else:
                 ttk.Checkbutton(frame, text='Sin definir', variable=self.var_etiqueta_elegida, state='disabled').grid(column=0, row=2+idx, sticky=(E,W))
         
-        self.lista_checkbuttons = lista_vars_checkbuttons        
+        self.lista_vars_checkbuttons = lista_vars_checkbuttons.copy()
         
         return frame
     
