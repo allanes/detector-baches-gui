@@ -239,8 +239,8 @@ class GUI():
         def crear_panel_control_multimedia(padre):
             control_multimedia = ttk.Frame(padre)
             ttk.Label(control_multimedia, text='Control Multimedia').grid(column=0,row=0, columnspan=2)
-            ttk.Button(control_multimedia,text='<', command=self.configurar_widget_imagen).grid(column=0, row=1)
-            ttk.Button(control_multimedia,text='>', command=self.configurar_widget_imagen).grid(column=1, row=1)
+            ttk.Button(control_multimedia,text='<', command=self.anterior_imagen).grid(column=0, row=1)
+            ttk.Button(control_multimedia,text='>', command=self.siguiente_imagen).grid(column=1, row=1)
             
             return control_multimedia
             
@@ -256,8 +256,14 @@ class GUI():
         self.configurar_widget_imagen()        
         
         return frame
+    
+    def siguiente_imagen(self):
+        self.configurar_widget_imagen(siguiente=True)
         
-    def configurar_widget_imagen(self):
+    def anterior_imagen(self):
+        self.configurar_widget_imagen(siguiente=False)
+        
+    def configurar_widget_imagen(self, siguiente: bool = True):
         lista_archivos = os.listdir(self.ruta_salida.get())
         
         if 'labels' in lista_archivos: lista_archivos.remove('labels')
@@ -270,7 +276,17 @@ class GUI():
         elif tipo_entrada_elegida == 'Carpeta':
             for idx, archivo in enumerate(lista_archivos):
                 if archivo == os.path.split(self.archivo_a_mostrar.get())[1]:
-                    archivo_nuevo = lista_archivos[idx + 1]
+                    
+                    if siguiente:
+                        if (idx == len(lista_archivos) - 1): 
+                            idx = -1
+                        idx_nuevo = idx + 1
+                    else:
+                        if (idx == 0): 
+                            idx = len(lista_archivos)                        
+                        idx_nuevo = idx - 1
+                    
+                    archivo_nuevo = lista_archivos[idx_nuevo]                        
                     break
                     
         self.archivo_a_mostrar.set(f'{self.ruta_salida.get()}/{archivo_nuevo}')
