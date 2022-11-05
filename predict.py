@@ -110,13 +110,14 @@ def getMetadataByName(nombre:str) -> ModelMetadata:
     
 def run(ruta_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 0.25, lista_clases: list[str] = None):
     RUTA_BASE_YOLOS = os.getenv('RUTA_BASE_YOLOS')
+    
     modelo = getMetadataByName(nombre_modelo)
     print(f'\nUsando modelo {modelo.nombre}\n')
     
     # Armo rutas antes de la llamada
     ruta_archivo_detect = f'{RUTA_BASE_YOLOS}/{YoloRutas[modelo.yolo_ver.name].value}/detect.py'
     ruta_dataset_data = DatasetRutas[modelo.dataset_ver.name].value
-    carpeta_salida_base = './static/output'
+    carpeta_salida_base = os.getenv('RUTA_SALIDAS')
     carpeta_salida_nueva = f'{modelo.nombre}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
     
     # Llamada
