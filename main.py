@@ -18,7 +18,7 @@ load_dotenv('rutas_cfg')
 RUTA_SALIDAS = os.getenv('RUTA_SALIDAS')
 VENTANA_TITULO = 'Mantenimiento Vial con I.A.'
 VENTANA_ANCHO = 1500
-VENTANA_ALTO = 600
+VENTANA_ALTO = 900
 
 
 @dataclass
@@ -46,6 +46,8 @@ class GUI():
         self.panel_entradas.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=3)
         self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.input_params_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
+        self.panel_email = self.crear_panel_cuerpo_mail(parent_frame=self.input_params_frame)
+        self.panel_email.grid(column=1, row=1, sticky=(N,S,E,W), columnspan=3)
         
         
     def start(self):
@@ -80,6 +82,8 @@ class GUI():
         self.ruta_salida = StringVar(value=f'{os.getenv("RUTA_SALIDAS")}/{ultima_salida}')
         self.archivo_a_mostrar = StringVar()
         
+        # Panel Mail
+        self.cuerpo_mail = ''
         
     def funcion_panel_pedido_ruta(self):
         if self.var_tipo_entrada_elegida.get() == 'Carpeta':
@@ -125,7 +129,9 @@ class GUI():
             iou=self.var_iou_elegido.get(),
             lista_clases=lista_clases_deseadas
         )
-        print(cuerpo_mail)
+        self.cuerpo_mail = cuerpo_mail
+        self.widget_cuerpo_mail.insert('0.0', cuerpo_mail)
+        
         self.ruta_salida.set(os.path.abspath(ruta_salida))
         print('Salida generada en: ' + self.ruta_salida.get())
         self.archivo_a_mostrar.set('')
@@ -350,6 +356,17 @@ class GUI():
         
         if not self.modo_imagen: self.widget_deteccion_imagen.after(10, self.procesar_multimedia)
     
+    def crear_panel_cuerpo_mail(self, parent_frame) -> ttk.Frame:
+        
+        frame = ttk.Frame(parent_frame)
+        
+        ttk.Label(frame, text='Mail').grid(column=0, row=0)
+        self.widget_cuerpo_mail = Text(frame, width=40)
+        self.widget_cuerpo_mail.grid(column=0, row=0, columnspan=3, rowspan=3)
+        
+        self.widget_cuerpo_mail.insert('0.0', self.cuerpo_mail)
+        
+        return frame
     
 if __name__ == '__main__':
     gui = GUI()
