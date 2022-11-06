@@ -64,7 +64,7 @@ class GUI():
         ttk.Label(frame, text='Inicio de sesión').grid(column=0, row=0)
         
         # ruta_logo = os.path.abspath('logo.jpeg')
-        ruta_logo = 'logo_armada_argentina.png'
+        ruta_logo = 'logo.png'
         print(f'ruta logo: {ruta_logo}')
         
         # image = cv2.imread(ruta_logo)
@@ -74,7 +74,7 @@ class GUI():
         # image = ImageTk.PhotoImage(image=image)
         log_image = PhotoImage(file=ruta_logo)
         
-        self.label_logo = ttk.Label(frame, relief='raised', image=log_image)
+        self.label_logo = ttk.Label(frame, image=log_image)
         self.label_logo.grid(column=0, row=1)
         self.label_logo.configure(image=log_image)
         self.label_logo['image'] = log_image
