@@ -9,7 +9,7 @@ from PIL import ImageTk, Image
 from pyparsing import col
 from tkVideoPlayer import TkinterVideo
 
-from predict import recuperar_metadatos_modelos as get_metadatos_modelos
+from predict import get_metadatos_modelos as get_metadatos_modelos
 import predict
 from dotenv import load_dotenv
 
@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 load_dotenv('rutas_cfg')
 RUTA_SALIDAS = os.getenv('RUTA_SALIDAS')
 VENTANA_TITULO = 'Mantenimiento Vial con I.A.'
-VENTANA_ANCHO = 1500
-VENTANA_ALTO = 600
+VENTANA_ANCHO = 1800
+VENTANA_ALTO = 900
 
 
 @dataclass
@@ -46,6 +46,8 @@ class GUI():
         self.panel_entradas.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=3)
         self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.input_params_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
+        self.panel_email = self.crear_panel_cuerpo_mail(parent_frame=self.input_params_frame)
+        self.panel_email.grid(column=0, row=1, sticky=(N,S,E,W), columnspan=3)
         
         
     def start(self):
@@ -80,6 +82,10 @@ class GUI():
         self.ruta_salida = StringVar(value=f'{os.getenv("RUTA_SALIDAS")}/{ultima_salida}')
         self.archivo_a_mostrar = StringVar()
         
+        # Panel Mail
+        self.var_emails_destino = StringVar(value='ados.adrian@gmail.com,')
+        self.var_asunto = StringVar(value='Resultados de detecciones')
+        self.var_mail_enviado = StringVar(value='')
         
     def funcion_panel_pedido_ruta(self):
         if self.var_tipo_entrada_elegida.get() == 'Carpeta':
@@ -119,6 +125,15 @@ class GUI():
             lista_clases=lista_clases_deseadas
         )
         
+        cuerpo_mail = predict.preparar_cuerpo_mail(
+            ruta_base_label=ruta_salida,
+            confianza=self.var_confianza_elegida.get(),
+            iou=self.var_iou_elegido.get(),
+            lista_clases=lista_clases_deseadas
+        )
+        # self.cuerpo_mail = cuerpo_mail
+        self.widget_cuerpo_mail.insert('0.0', cuerpo_mail)
+        
         self.ruta_salida.set(os.path.abspath(ruta_salida))
         print('Salida generada en: ' + self.ruta_salida.get())
         self.archivo_a_mostrar.set('')
@@ -127,7 +142,7 @@ class GUI():
             
    
     def crear_frame_principal_entradas(self, parent_frame):
-        frame_config_parametros = ttk.Frame(parent_frame)
+        frame_config_parametros = ttk.Frame(parent_frame, borderwidth=2, relief='raised',padding=(10,5))
         
         styling_grid = {}
         
@@ -135,14 +150,14 @@ class GUI():
         self.crear_panel_modelo(frame_config_parametros).grid(column=0, row=1, **styling_grid)
         self.crear_panel_parametros_deteccion(frame_config_parametros).grid(column=0, row=2, **styling_grid)
         self.crear_panel_etiquetas(frame_config_parametros).grid(column=1, row=1, rowspan=2, **styling_grid)
-        self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=2, row=1, rowspan=2, **styling_grid)
+        self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=3, row=1, rowspan=4, **styling_grid)
         
         for frame in frame_config_parametros.winfo_children():
             frame['borderwidth'] = 2,
             frame['relief'] = 'raised',
             frame['padding'] = (10,5)
         
-        ttk.Button(frame_config_parametros,text='Inferir', width=20, command=self.preparar_llamada_y_llamar).grid(column=0, row=3)
+        ttk.Button(frame_config_parametros,text='INFERIR', command=self.preparar_llamada_y_llamar).grid(column=0, row=3, rowspan=2, sticky=(W,E))
         
         return frame_config_parametros
     
@@ -332,7 +347,7 @@ class GUI():
                 self.capture.release()
                 return
             
-        ancho_alto = predict.getMetadataByName(self.var_modelo_elegido.get()).image_size
+        ancho_alto = predict.get_metadata_by_name(self.var_modelo_elegido.get()).image_size
         multimedia = cv2.resize(multimedia, (ancho_alto,ancho_alto))
         multimedia = cv2.cvtColor(multimedia, cv2.COLOR_BGR2RGB)
         multimedia = Image.fromarray(multimedia)
@@ -343,6 +358,36 @@ class GUI():
         
         if not self.modo_imagen: self.widget_deteccion_imagen.after(10, self.procesar_multimedia)
     
+    def crear_panel_cuerpo_mail(self, parent_frame) -> ttk.Frame:
+        
+        frame = ttk.Frame(parent_frame, borderwidth=2, relief='raised',padding=(10,5))
+        ttk.Label(frame, text='Mail').grid(column=0, row=0)
+        
+        ttk.Label(frame, text='Asunto').grid(column=1, row=1)
+        ttk.Entry(frame, textvariable=self.var_asunto).grid(column=1, row=2, columnspan=3)
+        ttk.Label(frame, text='Destino').grid(column=1, row=3)
+        ttk.Entry(frame, textvariable=self.var_emails_destino).grid(column=1, row=4, columnspan=3)
+        ttk.Button(frame, text='Enviar', command=self.enviar_email).grid(column=1, row=5)
+        ttk.Label(frame, textvariable=self.var_mail_enviado).grid(column=1, row=6)
+        
+        self.widget_cuerpo_mail = Text(frame, width=100, height=20)
+        self.widget_cuerpo_mail.grid(column=0, row=1, rowspan=6)
+        return frame
+    
+    def enviar_email(self):
+        asunto = self.var_asunto.get()
+        emails = self.var_emails_destino.get()
+        cuerpo = self.widget_cuerpo_mail.get('1.0', 'end')
+        
+        asunto = '\nAsunto:\n' + asunto
+        emails = '\nEmails:\n' + emails
+        cuerpo = '\nCuerpo:\n' + cuerpo
+        
+        file = open('outputs/mail.txt', 'w')
+        file.write(asunto + emails + cuerpo)
+        
+        self.var_mail_enviado.set('mail enviado!')
+        
     
 if __name__ == '__main__':
     gui = GUI()
