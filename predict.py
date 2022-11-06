@@ -208,15 +208,15 @@ def preparar_cuerpo_mail(ruta_base_label:str, confianza:float = 0.2, iou:float =
     cadena += f'Cantidad de archivos con detecciones: {len([label not in [""] for label in lista_labels_seleccionados])}\n'
     
     cadena += f'\nParámetros de la detección\n'
-    cadena += f'  . Umbral de confianza: {confianza}\n'
-    cadena += f'  . Umbral de IOU: {iou}\n'
-    cadena += f'  . Etiquetas de detección: {[mapa_etiquetas[clase] for clase in lista_clases]}\n'
+    cadena += f'\t. Umbral de confianza: {confianza}\n'
+    cadena += f'\t. Umbral de IOU: {iou}\n'
+    cadena += f'\t. Etiquetas de detección: {[mapa_etiquetas[clase] for clase in lista_clases]}\n'
     
     cadena += f'\nDatos del modelo usado\n'
-    cadena += f'  . Nombre del modelo base: {modelo.yolo_ver}\n'
-    cadena += f'  . Nombre del modelo entrenado: {modelo.nombre}\n'
-    cadena += f'  . Version del dataset: {modelo.dataset_ver}\n'
-    cadena += f'  . Etiquetas de entrenamiento: {lista_etiquetas}\n'
+    cadena += f'\t. Nombre del modelo base: {modelo.yolo_ver}\n'
+    cadena += f'\t. Nombre del modelo entrenado: {modelo.nombre}\n'
+    cadena += f'\t. Version del dataset: {modelo.dataset_ver}\n'
+    cadena += f'\t. Etiquetas de entrenamiento: {lista_etiquetas}\n'
 
     cadena += '\n'
     for archivo, label in zip(lista_archivos, lista_labels_seleccionados):
@@ -224,12 +224,12 @@ def preparar_cuerpo_mail(ruta_base_label:str, confianza:float = 0.2, iou:float =
         file = open(f'{ruta_labels}/{label}')
         lineas = file.readlines()
         lineas = [f'{mapa_etiquetas[linea[0]]} {linea}' for linea in lineas]
-        cadena_detalles = '\t'.join(lineas)
+        cadena_detalles = '\t\t'.join(lineas)
         
         cadena += f'- Archivo de entrada "{archivo}"\n'
-        cadena += f'  . Cantidad de detecciones: {len(lineas)}\n'
-        cadena += f'  . Label de referencia: {label}\n'
-        cadena += f'  . Detalle de detecciones\n\t'
+        cadena += f'\t. Cantidad de detecciones: {len(lineas)}\n'
+        cadena += f'\t. Label de referencia: {label}\n'
+        cadena += f'\t. Detalle de detecciones\n\t'
         
         cadena += cadena_detalles + '\n\n'
     
