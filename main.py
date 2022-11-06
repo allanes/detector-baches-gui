@@ -36,12 +36,14 @@ class GUI():
         
         # Declarar variables sincronizadas
         self.crear_variables_sincronizadas()
-        # Crear Login
-        self.panel_login = self.crear_frame_login(parent_frame=self.root)
-        self.panel_login.grid(column=0, row=0, sticky=(N, W, E, S))
+        
         # Creates Panel Principal
         self.main_frame = ttk.Frame(self.root)
         # self.main_frame.grid(column=0, row=0, sticky=(N, W, E, S)) #Implementado en iniciar_sesion()
+        
+        # Crear Login
+        self.panel_login = self.crear_frame_login(parent_frame=self.root)
+        self.panel_login.grid(column=0, row=0, sticky=(N, W, E, S))
         
         # Paneles principales: Entrada y salida
         self.panel_entradas = self.crear_frame_principal_entradas(parent_frame=self.main_frame)
@@ -49,33 +51,42 @@ class GUI():
         self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.main_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
         self.panel_email = self.crear_panel_cuerpo_mail(parent_frame=self.main_frame)
-        self.panel_email.grid(column=0, row=1, sticky=(N,S,E,W), columnspan=3, rowspan=2)
+        self.panel_email.grid(column=0, row=1, sticky=(N,S,E,W), columnspan=3, rowspan=2)        
         
-        # self.panel_login.grid(column=3, row=1)
         
     def start(self):
         # Make it start the Event Loop
         self.root.mainloop()
         
     def crear_frame_login(self, parent_frame:str) -> ttk.Frame:
-        frame = Frame(parent_frame)
+        frame = ttk.Frame(parent_frame)
+        
         ttk.Label(frame, text='Inicio de sesión').grid(column=0, row=0)
         
-        image = PhotoImage(file='./logo.png')
+        # ruta_logo = os.path.abspath('logo.jpeg')
+        ruta_logo = 'logo_armada_argentina.png'
+        print(f'ruta logo: {ruta_logo}')
         
-        label = ttk.Label(frame, image=image)
-        label.grid(column=0, row=1)
-        label.configure(image=image)
-        label['image'] = image
+        # image = cv2.imread(ruta_logo)
+        # # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = cv2.resize(image, (300,300))
+        # image = Image.fromarray(image)
+        # image = ImageTk.PhotoImage(image=image)
+        log_image = PhotoImage(file=ruta_logo)
+        
+        self.label_logo = ttk.Label(frame, relief='raised', image=log_image)
+        self.label_logo.grid(column=0, row=1)
+        self.label_logo.configure(image=log_image)
+        self.label_logo['image'] = log_image
+        
         ttk.Label(frame, text='Usuario:').grid(column=0,row=2)
         ttk.Entry(frame, textvariable=self.var_usuario).grid(column=1, row=2)
-        ttk.Label(frame, text='Usuario:').grid(column=0,row=3)
+        ttk.Label(frame, text='Contraseña:').grid(column=0,row=3)
         ttk.Entry(frame, textvariable=self.var_password, show='*').grid(column=1, row=3)
         ttk.Button(frame, text='Inciar sesion', command=self.iniciar_sesion).grid(column=0, row=4, columnspan=2, sticky=E)
         ttk.Label(frame, textvariable=self.var_msje_login).grid(column=0, row=5, columnspan=2, sticky=E)
         
         return frame
-        pass
     
     def iniciar_sesion(self):
         load_dotenv('.env')
@@ -333,7 +344,6 @@ class GUI():
     def configurar_widget_multimedia(self, siguiente: bool = True):
         lista_archivos = os.listdir(self.ruta_salida.get())
         if 'labels' in lista_archivos: lista_archivos.remove('labels')
-        print(f'lista_archivos: {lista_archivos}')
         
         archivo_nuevo = ''
         tipo_entrada_elegida = self.var_tipo_entrada_elegida.get()
