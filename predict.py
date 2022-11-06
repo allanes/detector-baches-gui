@@ -229,7 +229,7 @@ def preparar_cuerpo_mail(ruta_base_label:str, confianza:float = 0.2, iou:float =
         cadena += f'- Archivo de entrada "{archivo}"\n'
         cadena += f'\t. Cantidad de detecciones: {len(lineas)}\n'
         cadena += f'\t. Label de referencia: {label}\n'
-        cadena += f'\t. Detalle de detecciones\n\t'
+        cadena += f'\t. Detalle de detecciones\n\t\t'
         
         cadena += cadena_detalles + '\n\n'
     
