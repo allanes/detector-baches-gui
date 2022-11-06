@@ -333,8 +333,7 @@ class GUI():
                 return
             
         ancho_alto = predict.getMetadataByName(self.var_modelo_elegido.get()).image_size
-        multimedia = imutils.resize(multimedia, height=480)
-        multimedia = imutils.resize(multimedia, width=640)
+        multimedia = cv2.resize(multimedia, (ancho_alto,ancho_alto))
         multimedia = cv2.cvtColor(multimedia, cv2.COLOR_BGR2RGB)
         multimedia = Image.fromarray(multimedia)
         multimedia = ImageTk.PhotoImage(image=multimedia)
