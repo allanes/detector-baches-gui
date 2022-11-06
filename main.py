@@ -34,33 +34,86 @@ class GUI():
         self.root.title(VENTANA_TITULO)
         self.root.geometry(f'{VENTANA_ANCHO}x{VENTANA_ALTO}')
         
-        # Creates Main Content Frame
-        self.input_params_frame = ttk.Frame(self.root)
-        self.input_params_frame.grid(column=0, row=0, sticky=(N, W, E, S))
-        
         # Declarar variables sincronizadas
         self.crear_variables_sincronizadas()
         
+        # Creates Panel Principal
+        self.main_frame = ttk.Frame(self.root)
+        # self.main_frame.grid(column=0, row=0, sticky=(N, W, E, S)) #Implementado en iniciar_sesion()
+        
+        # Crear Login
+        self.panel_login = self.crear_frame_login(parent_frame=self.root)
+        self.panel_login.grid(column=0, row=0, sticky=(N, W, E, S))
+        
         # Paneles principales: Entrada y salida
-        self.panel_entradas = self.crear_frame_principal_entradas(parent_frame=self.input_params_frame)
+        self.panel_entradas = self.crear_frame_principal_entradas(parent_frame=self.main_frame)
         self.panel_entradas.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=3)
-        self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.input_params_frame)
+        self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.main_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
-        self.panel_email = self.crear_panel_cuerpo_mail(parent_frame=self.input_params_frame)
-        self.panel_email.grid(column=0, row=1, sticky=(N,S,E,W), columnspan=3)
+        self.panel_email = self.crear_panel_cuerpo_mail(parent_frame=self.main_frame)
+        self.panel_email.grid(column=0, row=1, sticky=(N,S,E,W), columnspan=3, rowspan=2)        
         
         
     def start(self):
         # Make it start the Event Loop
         self.root.mainloop()
         
+    def crear_frame_login(self, parent_frame:str) -> ttk.Frame:
+        frame = ttk.Frame(parent_frame)
+        
+        ttk.Label(frame, text='Inicio de sesión').grid(column=0, row=0)
+        
+        # ruta_logo = os.path.abspath('logo.jpeg')
+        ruta_logo = 'logo.png'
+        print(f'ruta logo: {ruta_logo}')
+        
+        # image = cv2.imread(ruta_logo)
+        # # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # image = cv2.resize(image, (300,300))
+        # image = Image.fromarray(image)
+        # image = ImageTk.PhotoImage(image=image)
+        log_image = PhotoImage(file=ruta_logo)
+        
+        self.label_logo = ttk.Label(frame, image=log_image)
+        self.label_logo.grid(column=0, row=1)
+        self.label_logo.configure(image=log_image)
+        self.label_logo['image'] = log_image
+        
+        ttk.Label(frame, text='Usuario:').grid(column=0,row=2)
+        ttk.Entry(frame, textvariable=self.var_usuario).grid(column=1, row=2)
+        ttk.Label(frame, text='Contraseña:').grid(column=0,row=3)
+        ttk.Entry(frame, textvariable=self.var_password, show='*').grid(column=1, row=3)
+        ttk.Button(frame, text='Inciar sesion', command=self.iniciar_sesion).grid(column=0, row=4, columnspan=2, sticky=E)
+        ttk.Label(frame, textvariable=self.var_msje_login).grid(column=0, row=5, columnspan=2, sticky=E)
+        
+        return frame
+    
+    def iniciar_sesion(self):
+        load_dotenv('.env')
+        usuario_valido = os.getenv('usuario')
+        contra_valida = os.getenv('password')
+        
+        if self.var_usuario.get() == usuario_valido and self.var_password.get() == contra_valida:
+            # self.mostrar_ventana_principal()
+            self.var_msje_login.set('Iniciando sesion')
+            self.panel_login.destroy()
+            self.main_frame.grid(column=0, row=0, sticky=(N, W, E, S))
+        else:
+            self.var_msje_login.set('Datos no válidos')
+            pass
+        
     def crear_variables_sincronizadas(self):
         # Generales
         ultima_salida = os.listdir(os.getenv('RUTA_SALIDAS'))
-        print(f'salidas encontradas: {ultima_salida}')
+        
         if len(ultima_salida): ultima_salida = ultima_salida[-1]
         self.capture = None
         self.modo_imagen = True
+        
+        # Panel Login
+        self.var_usuario = StringVar(value='Usuario')
+        self.var_password = StringVar(value='1234')
+        self.var_msje_login = StringVar(value='')
         
         # Panel de pedido de ruta de entrada
         self.var_tipo_entrada_elegida = StringVar(value='Archivo')
@@ -291,7 +344,6 @@ class GUI():
     def configurar_widget_multimedia(self, siguiente: bool = True):
         lista_archivos = os.listdir(self.ruta_salida.get())
         if 'labels' in lista_archivos: lista_archivos.remove('labels')
-        print(f'lista_archivos: {lista_archivos}')
         
         archivo_nuevo = ''
         tipo_entrada_elegida = self.var_tipo_entrada_elegida.get()
