@@ -126,7 +126,7 @@ def run(ruta_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 
         f'--weights {modelo.ruta_pesos} ' +\
         f'--img-size {modelo.image_size} ' +\
         f'--conf-thres {confianza} ' +\
-        f'--source {ruta_entrada} ' +\
+        f'--source "{ruta_entrada}" ' +\
         f'--iou-thres {iou} ' +\
         f'--name {carpeta_salida_nueva} ' +\
         f'--project {carpeta_salida_base} ' +\
@@ -143,8 +143,9 @@ def run(ruta_entrada:str, nombre_modelo:str, confianza:float = 0.2, iou:float = 
     os.system(cadena)
     
     ruta_salida = carpeta_salida_base + '/' + carpeta_salida_nueva
-    if not len(os.listdir(ruta_salida)): return None
+    print(f'predict_ruta_salida: {ruta_salida}')
     
+    if not len(os.listdir(ruta_salida)): return None    
     return ruta_salida
 
     

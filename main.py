@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 load_dotenv('rutas_cfg')
 RUTA_SALIDAS = os.getenv('RUTA_SALIDAS')
 VENTANA_TITULO = 'Mantenimiento Vial con I.A.'
-VENTANA_ANCHO = 1280
-VENTANA_ALTO = 720
+VENTANA_ANCHO = 1500
+VENTANA_ALTO = 600
 
 
 @dataclass
@@ -46,7 +46,6 @@ class GUI():
         self.panel_entradas.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=3)
         self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.input_params_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
-        
         
         
     def start(self):
@@ -122,6 +121,7 @@ class GUI():
         
         self.ruta_salida.set(os.path.abspath(ruta_salida))
         print('Salida generada en: ' + self.ruta_salida.get())
+        self.archivo_a_mostrar.set('')
         
         self.configurar_widget_multimedia()
             
@@ -241,7 +241,7 @@ class GUI():
             control_multimedia = ttk.Frame(padre)
             ttk.Label(control_multimedia, text='Control Multimedia').grid(column=0,row=0, columnspan=2)
             ttk.Button(control_multimedia,text='<', command=self.anterior_multimedia).grid(column=0, row=1)
-            ttk.Button(control_multimedia,text='>  ||', command=self.anterior_multimedia).grid(column=1, row=1)
+            ttk.Button(control_multimedia,text='>  ||', command=self.reiniciar_multimedia).grid(column=1, row=1)
             ttk.Button(control_multimedia,text='>', command=self.siguiente_multimedia).grid(column=2, row=1)
             
             return control_multimedia
@@ -264,10 +264,19 @@ class GUI():
     def anterior_multimedia(self):
         self.configurar_widget_multimedia(siguiente=False)
         
+    def reiniciar_multimedia(self):
+        if self.modo_imagen: return
+            
+        self.capture.release()
+        self.capture = cv2.VideoCapture(self.archivo_a_mostrar.get())
+        self.procesar_multimedia()
+        pass
+        
+        
     def configurar_widget_multimedia(self, siguiente: bool = True):
         lista_archivos = os.listdir(self.ruta_salida.get())
-        
         if 'labels' in lista_archivos: lista_archivos.remove('labels')
+        print(f'lista_archivos: {lista_archivos}')
         
         archivo_nuevo = ''
         tipo_entrada_elegida = self.var_tipo_entrada_elegida.get()
@@ -275,20 +284,23 @@ class GUI():
         if tipo_entrada_elegida == 'Archivo':
             archivo_nuevo = lista_archivos[0]
         elif tipo_entrada_elegida == 'Carpeta':
-            for idx, archivo in enumerate(lista_archivos):
-                if archivo == os.path.split(self.archivo_a_mostrar.get())[1]:
-                    idx_nuevo = idx
-                    if siguiente:
-                        if (idx == len(lista_archivos) - 1): 
-                            idx = -1
-                        idx_nuevo = idx + 1
-                    else:
-                        if (idx == 0): 
-                            idx = len(lista_archivos)                        
-                        idx_nuevo = idx - 1
-                    
-                    archivo_nuevo = lista_archivos[idx_nuevo]                        
-                    break
+            if self.archivo_a_mostrar.get() == '':
+                archivo_nuevo = lista_archivos[0]
+            else:                
+                for idx, archivo in enumerate(lista_archivos):
+                    if archivo == os.path.split(self.archivo_a_mostrar.get())[1]:
+                        # idx_nuevo = idx
+                        if siguiente:
+                            if (idx == len(lista_archivos) - 1): 
+                                idx = -1
+                            idx_nuevo = idx + 1
+                        else:
+                            if (idx == 0): 
+                                idx = len(lista_archivos)                        
+                            idx_nuevo = idx - 1
+                        
+                        archivo_nuevo = lista_archivos[idx_nuevo]                        
+                        break
         
         archivo_a_mostrar = f'{self.ruta_salida.get()}/{archivo_nuevo}'
         self.archivo_a_mostrar.set(archivo_a_mostrar)
@@ -297,9 +309,9 @@ class GUI():
         
         extensiones_imagen = ['.jpg', '.jpeg','.png']
         extension = os.path.splitext(archivo_a_mostrar)[1]
-        imagen = extension in extensiones_imagen
-        print(f'Modo imagen: {imagen}. extension: {extension}')
-        if imagen:
+        es_imagen = True if extension in extensiones_imagen else False
+        print(f'Modo imagen: {es_imagen}. extension: {extension}')
+        if es_imagen:
             self.capture = cv2.imread(archivo_a_mostrar)
             self.modo_imagen = True
         else: # Si es video:
@@ -321,8 +333,8 @@ class GUI():
                 return
             
         ancho_alto = predict.getMetadataByName(self.var_modelo_elegido.get()).image_size
-        multimedia = imutils.resize(multimedia, height=ancho_alto)
-        multimedia = imutils.resize(multimedia, width=ancho_alto)
+        multimedia = imutils.resize(multimedia, height=480)
+        multimedia = imutils.resize(multimedia, width=640)
         multimedia = cv2.cvtColor(multimedia, cv2.COLOR_BGR2RGB)
         multimedia = Image.fromarray(multimedia)
         multimedia = ImageTk.PhotoImage(image=multimedia)
@@ -330,8 +342,7 @@ class GUI():
         self.widget_deteccion_imagen.configure(image=multimedia)
         self.widget_deteccion_imagen.image = multimedia
         
-        # if not self.modo_imagen:
-        self.widget_deteccion_imagen.after(10, self.procesar_multimedia)
+        if not self.modo_imagen: self.widget_deteccion_imagen.after(10, self.procesar_multimedia)
     
     
 if __name__ == '__main__':
