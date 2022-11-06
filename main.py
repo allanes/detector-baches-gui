@@ -9,7 +9,7 @@ from PIL import ImageTk, Image
 from pyparsing import col
 from tkVideoPlayer import TkinterVideo
 
-from predict import recuperar_metadatos_modelos as get_metadatos_modelos
+from predict import get_metadatos_modelos as get_metadatos_modelos
 import predict
 from dotenv import load_dotenv
 
@@ -119,6 +119,13 @@ class GUI():
             lista_clases=lista_clases_deseadas
         )
         
+        cuerpo_mail = predict.preparar_cuerpo_mail(
+            ruta_base_label=ruta_salida,
+            confianza=self.var_confianza_elegida.get(),
+            iou=self.var_iou_elegido.get(),
+            lista_clases=lista_clases_deseadas
+        )
+        print(cuerpo_mail)
         self.ruta_salida.set(os.path.abspath(ruta_salida))
         print('Salida generada en: ' + self.ruta_salida.get())
         self.archivo_a_mostrar.set('')
@@ -332,7 +339,7 @@ class GUI():
                 self.capture.release()
                 return
             
-        ancho_alto = predict.getMetadataByName(self.var_modelo_elegido.get()).image_size
+        ancho_alto = predict.get_metadata_by_name(self.var_modelo_elegido.get()).image_size
         multimedia = cv2.resize(multimedia, (ancho_alto,ancho_alto))
         multimedia = cv2.cvtColor(multimedia, cv2.COLOR_BGR2RGB)
         multimedia = Image.fromarray(multimedia)
