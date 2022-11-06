@@ -1,7 +1,7 @@
 python-dotenv
 PyYAML
 ipython
-tkvideoplayer
+imutils
 
 # Requerimientos para inferencia YOLOv5 y YOLOv7
 
