@@ -8,7 +8,7 @@ import imutils
 from PIL import ImageTk, Image
 from pyparsing import col
 from tkVideoPlayer import TkinterVideo
-import yaml
+
 from predict import recuperar_metadatos_modelos as get_metadatos_modelos
 import predict
 from dotenv import load_dotenv
@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 load_dotenv('rutas_cfg')
 RUTA_SALIDAS = os.getenv('RUTA_SALIDAS')
 VENTANA_TITULO = 'Mantenimiento Vial con I.A.'
-VENTANA_ANCHO = 1280
-VENTANA_ALTO = 720
+VENTANA_ANCHO = 1500
+VENTANA_ALTO = 600
 
 
 @dataclass
@@ -44,9 +44,8 @@ class GUI():
         # Paneles principales: Entrada y salida
         self.panel_entradas = self.crear_frame_principal_entradas(parent_frame=self.input_params_frame)
         self.panel_entradas.grid(column=0, row=0, sticky=(N,S,E,W), columnspan=3)
-        self.panel_salida = self.crear_frame_salida_imagenes(parent_frame=self.input_params_frame)
+        self.panel_salida = self.crear_frame_salida_videos(parent_frame=self.input_params_frame)
         self.panel_salida.grid(column=3, row=0, sticky=(N,S,E,W), columnspan=3)
-        
         
         
     def start(self):
@@ -58,7 +57,8 @@ class GUI():
         ultima_salida = os.listdir(os.getenv('RUTA_SALIDAS'))
         print(f'salidas encontradas: {ultima_salida}')
         if len(ultima_salida): ultima_salida = ultima_salida[-1]
-        
+        self.capture = None
+        self.modo_imagen = True
         
         # Panel de pedido de ruta de entrada
         self.var_tipo_entrada_elegida = StringVar(value='Archivo')
@@ -121,8 +121,9 @@ class GUI():
         
         self.ruta_salida.set(os.path.abspath(ruta_salida))
         print('Salida generada en: ' + self.ruta_salida.get())
+        self.archivo_a_mostrar.set('')
         
-        self.configurar_widget_imagen()
+        self.configurar_widget_multimedia()
             
    
     def crear_frame_principal_entradas(self, parent_frame):
@@ -235,12 +236,13 @@ class GUI():
         # Params entrenamiento
         self.widget_params_entrenamiento.insert('0.0', training_params)
         
-    def crear_frame_salida_imagenes(self, parent_frame) -> ttk.Frame:
+    def crear_frame_salida_videos(self, parent_frame) -> ttk.Frame:
         def crear_panel_control_multimedia(padre):
             control_multimedia = ttk.Frame(padre)
             ttk.Label(control_multimedia, text='Control Multimedia').grid(column=0,row=0, columnspan=2)
-            ttk.Button(control_multimedia,text='<', command=self.anterior_imagen).grid(column=0, row=1)
-            ttk.Button(control_multimedia,text='>', command=self.siguiente_imagen).grid(column=1, row=1)
+            ttk.Button(control_multimedia,text='<', command=self.anterior_multimedia).grid(column=0, row=1)
+            ttk.Button(control_multimedia,text='>  ||', command=self.reiniciar_multimedia).grid(column=1, row=1)
+            ttk.Button(control_multimedia,text='>', command=self.siguiente_multimedia).grid(column=2, row=1)
             
             return control_multimedia
             
@@ -251,22 +253,30 @@ class GUI():
         crear_panel_control_multimedia(frame).grid(column=1, row=4)
         self.widget_deteccion_imagen = ttk.Label(frame)
         self.widget_deteccion_imagen.grid(column=0, row=1, padx=10, columnspan=3, rowspan=3)
-        
-        
-        self.configurar_widget_imagen()        
+                
+        self.configurar_widget_multimedia()        
         
         return frame
     
-    def siguiente_imagen(self):
-        self.configurar_widget_imagen(siguiente=True)
+    def siguiente_multimedia(self):
+        self.configurar_widget_multimedia(siguiente=True)
         
-    def anterior_imagen(self):
-        self.configurar_widget_imagen(siguiente=False)
+    def anterior_multimedia(self):
+        self.configurar_widget_multimedia(siguiente=False)
         
-    def configurar_widget_imagen(self, siguiente: bool = True):
+    def reiniciar_multimedia(self):
+        if self.modo_imagen: return
+            
+        self.capture.release()
+        self.capture = cv2.VideoCapture(self.archivo_a_mostrar.get())
+        self.procesar_multimedia()
+        pass
+        
+        
+    def configurar_widget_multimedia(self, siguiente: bool = True):
         lista_archivos = os.listdir(self.ruta_salida.get())
-        
         if 'labels' in lista_archivos: lista_archivos.remove('labels')
+        print(f'lista_archivos: {lista_archivos}')
         
         archivo_nuevo = ''
         tipo_entrada_elegida = self.var_tipo_entrada_elegida.get()
@@ -274,38 +284,66 @@ class GUI():
         if tipo_entrada_elegida == 'Archivo':
             archivo_nuevo = lista_archivos[0]
         elif tipo_entrada_elegida == 'Carpeta':
-            for idx, archivo in enumerate(lista_archivos):
-                if archivo == os.path.split(self.archivo_a_mostrar.get())[1]:
-                    
-                    if siguiente:
-                        if (idx == len(lista_archivos) - 1): 
-                            idx = -1
-                        idx_nuevo = idx + 1
-                    else:
-                        if (idx == 0): 
-                            idx = len(lista_archivos)                        
-                        idx_nuevo = idx - 1
-                    
-                    archivo_nuevo = lista_archivos[idx_nuevo]                        
-                    break
-                    
-        self.archivo_a_mostrar.set(f'{self.ruta_salida.get()}/{archivo_nuevo}')
-            
-            
-        print(f'seleccionado archivo {self.archivo_a_mostrar.get()} para mostrar')
+            if self.archivo_a_mostrar.get() == '':
+                archivo_nuevo = lista_archivos[0]
+            else:                
+                for idx, archivo in enumerate(lista_archivos):
+                    if archivo == os.path.split(self.archivo_a_mostrar.get())[1]:
+                        # idx_nuevo = idx
+                        if siguiente:
+                            if (idx == len(lista_archivos) - 1): 
+                                idx = -1
+                            idx_nuevo = idx + 1
+                        else:
+                            if (idx == 0): 
+                                idx = len(lista_archivos)                        
+                            idx_nuevo = idx - 1
+                        
+                        archivo_nuevo = lista_archivos[idx_nuevo]                        
+                        break
         
+        archivo_a_mostrar = f'{self.ruta_salida.get()}/{archivo_nuevo}'
+        self.archivo_a_mostrar.set(archivo_a_mostrar)
+            
+        print(f'seleccionado archivo {archivo_a_mostrar} para mostrar')
+        
+        extensiones_imagen = ['.jpg', '.jpeg','.png']
+        extension = os.path.splitext(archivo_a_mostrar)[1]
+        es_imagen = True if extension in extensiones_imagen else False
+        print(f'Modo imagen: {es_imagen}. extension: {extension}')
+        if es_imagen:
+            self.capture = cv2.imread(archivo_a_mostrar)
+            self.modo_imagen = True
+        else: # Si es video:
+            self.modo_imagen = False
+            self.capture = cv2.VideoCapture(archivo_a_mostrar)
+            
+        self.procesar_multimedia()            
+    
+    def procesar_multimedia(self):
+        if self.modo_imagen:
+            multimedia = self.capture
+        else:
+            fotograma_procesado, fotograma = self.capture.read()
+                
+            if fotograma_procesado:
+                multimedia = fotograma                
+            else: 
+                self.capture.release()
+                return
+            
         ancho_alto = predict.getMetadataByName(self.var_modelo_elegido.get()).image_size
-        image = cv2.imread(self.archivo_a_mostrar.get())
-        image = imutils.resize(image, height=ancho_alto)
-        image = imutils.resize(image, width=ancho_alto)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(image)
-        image = ImageTk.PhotoImage(image=image)        
+        multimedia = cv2.resize(multimedia, (ancho_alto,ancho_alto))
+        multimedia = cv2.cvtColor(multimedia, cv2.COLOR_BGR2RGB)
+        multimedia = Image.fromarray(multimedia)
+        multimedia = ImageTk.PhotoImage(image=multimedia)
         
-        self.widget_deteccion_imagen.configure(image=image)
-        self.widget_deteccion_imagen.image = image
+        self.widget_deteccion_imagen.configure(image=multimedia)
+        self.widget_deteccion_imagen.image = multimedia
         
-            
+        if not self.modo_imagen: self.widget_deteccion_imagen.after(10, self.procesar_multimedia)
+    
+    
 if __name__ == '__main__':
     gui = GUI()
     gui.start()
