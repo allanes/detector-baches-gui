@@ -82,7 +82,8 @@ class GUI():
         ttk.Entry(frame, textvariable=self.var_usuario).grid(column=1, row=2)
         ttk.Label(frame, text='Contraseña:').grid(column=0,row=3)
         ttk.Entry(frame, textvariable=self.var_password, show='*').grid(column=1, row=3)
-        ttk.Button(frame, text='Inciar sesion', command=self.iniciar_sesion).grid(column=0, row=4, columnspan=2, sticky=E)
+        self.boton_iniciar_sesion = ttk.Button(frame, text='Inciar sesion', command=self.iniciar_sesion)
+        self.boton_iniciar_sesion.grid(column=0, row=4, columnspan=2, sticky=E)
         ttk.Label(frame, textvariable=self.var_msje_login).grid(column=0, row=5, columnspan=2, sticky=E)
         
         return frame
@@ -98,13 +99,18 @@ class GUI():
             self.panel_login.destroy()
             self.main_frame.grid(column=0, row=0, sticky=(N, W, E, S))
         else:
-            self.var_msje_login.set('Datos no válidos')
+            if self.contador_intentos == self.cantidad_intentos_max - 1:
+                self.boton_iniciar_sesion.state(['disabled'])
+                return
+            self.contador_intentos += 1
+            intentos_restantes = self.cantidad_intentos_max - self.contador_intentos
+            self.var_msje_login.set(f'Datos no válidos. Intentos restantes: {intentos_restantes}')
+            
             pass
         
     def crear_variables_sincronizadas(self):
         # Generales
         ultima_salida = 'salida_ejemplo/yolov7_2_20221106_153035'
-        
         self.capture = None
         self.modo_imagen = True
         
@@ -112,6 +118,9 @@ class GUI():
         self.var_usuario = StringVar(value='Usuario')
         self.var_password = StringVar(value='1234')
         self.var_msje_login = StringVar(value='')
+        self.boton_iniciar_sesion = None
+        self.contador_intentos = 0
+        self.cantidad_intentos_max = 3        
         
         # Panel de pedido de ruta de entrada
         self.var_tipo_entrada_elegida = StringVar(value='Archivo')
