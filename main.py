@@ -4,7 +4,8 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 import cv2
-import imutils
+import webbrowser
+from urllib.parse import quote
 from PIL import ImageTk, Image
 from pyparsing import col
 
@@ -434,18 +435,16 @@ class GUI():
         return frame
     
     def enviar_email(self):
+        def mailto(recipients, subject, body):
+            "recipients: string with comma-separated emails (no spaces!)"
+            webbrowser.open("mailto:%s?subject=%s&body=%s" %
+                (recipients, quote(subject), quote(body)))
+        
         asunto = self.var_asunto.get()
         emails = self.var_emails_destino.get()
         cuerpo = self.widget_cuerpo_mail.get('1.0', 'end')
         
-        asunto = '\nAsunto:\n' + asunto
-        emails = '\nEmails:\n' + emails
-        cuerpo = '\nCuerpo:\n' + cuerpo
-        
-        file = open('outputs/mail.txt', 'w')
-        file.write(asunto + emails + cuerpo)
-        
-        self.var_mail_enviado.set('mail enviado!')
+        mailto(emails.replace(' ', ''), subject=asunto, body=cuerpo)
         
     
 if __name__ == '__main__':
