@@ -7,7 +7,6 @@ import cv2
 import imutils
 from PIL import ImageTk, Image
 from pyparsing import col
-from tkVideoPlayer import TkinterVideo
 
 from predict import get_metadatos_modelos as get_metadatos_modelos
 import predict
@@ -104,9 +103,8 @@ class GUI():
         
     def crear_variables_sincronizadas(self):
         # Generales
-        ultima_salida = os.listdir(os.getenv('RUTA_SALIDAS'))
+        ultima_salida = 'salida_ejemplo/yolov7_2_20221106_153035'
         
-        if len(ultima_salida): ultima_salida = ultima_salida[-1]
         self.capture = None
         self.modo_imagen = True
         
@@ -132,7 +130,7 @@ class GUI():
         self.var_iou_elegido = DoubleVar(value=0.45)
         
         # Panel de detecciones
-        self.ruta_salida = StringVar(value=f'{os.getenv("RUTA_SALIDAS")}/{ultima_salida}')
+        self.ruta_salida = StringVar(value=ultima_salida)
         self.archivo_a_mostrar = StringVar()
         
         # Panel Mail
@@ -203,7 +201,7 @@ class GUI():
         self.crear_panel_modelo(frame_config_parametros).grid(column=0, row=1, **styling_grid)
         self.crear_panel_parametros_deteccion(frame_config_parametros).grid(column=0, row=2, **styling_grid)
         self.crear_panel_etiquetas(frame_config_parametros).grid(column=1, row=1, rowspan=2, **styling_grid)
-        self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=3, row=1, rowspan=4, **styling_grid)
+        self.crear_panel_parametros_entrenamiento(frame_config_parametros).grid(column=2, row=1, rowspan=4, **styling_grid)
         
         for frame in frame_config_parametros.winfo_children():
             frame['borderwidth'] = 2,

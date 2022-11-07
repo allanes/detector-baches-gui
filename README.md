@@ -19,6 +19,6 @@
     pip install -r requirements.txt    
     ```
 
-4. Crear un archivo `.env` con las variables `usuario` y `password`, y darles un valor
+4. Crear un archivo con nombre `.env` en la raíz del proyecto con las variables `usuario` y `password`, y darles un valor
 
-5. Configurar rutas en archivo ``rutas_cfg.env``
+5. Configurar rutas en archivo ``rutas_cfg.env``. Crear el directorio asignado en la variable `RUTA_SALIDAS` si no existe.
