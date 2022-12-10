@@ -116,7 +116,7 @@ class GUI():
         self.modo_imagen = True
         
         # Panel Login
-        self.var_usuario = StringVar(value='Usuario')
+        self.var_usuario = StringVar(value='User')
         self.var_password = StringVar(value='1234')
         self.var_msje_login = StringVar(value='')
         self.boton_iniciar_sesion = None
@@ -218,7 +218,7 @@ class GUI():
             frame['relief'] = 'raised',
             frame['padding'] = (10,5)
         
-        ttk.Button(frame_config_parametros,text='INFERIR', command=self.preparar_llamada_y_llamar).grid(column=0, row=3, rowspan=2, sticky=(W,E))
+        ttk.Button(frame_config_parametros,text='RUN', command=self.preparar_llamada_y_llamar).grid(column=0, row=3, rowspan=2, sticky=(W,E))
         
         return frame_config_parametros
     
@@ -423,11 +423,11 @@ class GUI():
         frame = ttk.Frame(parent_frame, borderwidth=2, relief='raised',padding=(10,5))
         ttk.Label(frame, text='Mail').grid(column=0, row=0)
         
-        ttk.Label(frame, text='Asunto').grid(column=1, row=1)
+        ttk.Label(frame, text='Subject').grid(column=1, row=1)
         ttk.Entry(frame, textvariable=self.var_asunto).grid(column=1, row=2, columnspan=3)
-        ttk.Label(frame, text='Destino').grid(column=1, row=3)
+        ttk.Label(frame, text='To:').grid(column=1, row=3)
         ttk.Entry(frame, textvariable=self.var_emails_destino).grid(column=1, row=4, columnspan=3)
-        ttk.Button(frame, text='Enviar', command=self.enviar_email).grid(column=1, row=5)
+        ttk.Button(frame, text='Send', command=self.enviar_email).grid(column=1, row=5)
         ttk.Label(frame, textvariable=self.var_mail_enviado).grid(column=1, row=6)
         
         self.widget_cuerpo_mail = Text(frame, width=100, height=20)
