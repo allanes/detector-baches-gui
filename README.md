@@ -1,20 +1,36 @@
-## Instalacion
+## Introduction
 
-1. Con la terminal en la ubicación deseada, clonar este repo y su dependencia:
+This is a desktop application for road-damage datection. This application
+exposes the models generated in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
+
+This project aids in obtaining a road-damage detection model for assessing
+potholes study.
+
+Here you will find how to speciallize YOLOv5 and YOLOv7 object detection 
+algorithms in road damage.
+
+## Pre-requisites
+
+This application looks for the models in generated directly in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
+
+## Installation
+
+1. Open the terminal in the desired directory and clone this project:
    ```
-   git clone https://github.com/allanes/detector-baches-gui.git
+   git clone https://github.com/allanes/pothole-detector-gui.git
    ```
 
-2. Crear un nuevo ambiente. Se muestran las instrucciones para crear uno usando la herramienta venv:
-    Para Windows:
+2. Create a new Python environment. Below are the instructions to create one
+using *venv* on Windows:
     ```   
-    cd detector-baches-gui
+    cd pothole-detector-gui
     python -m venv .venv
     .venv\Scripts\activate
     python -m pip install -U pip
     ``` 
 
-3. Para instalar las dependencias de este proyecto, desde el ambiente ejecutar:
+3. To install requirements, copy the following commands to the activated 
+environment:
     ```
     pip install -r requirements.txt    
     ```
