@@ -1,13 +1,10 @@
 ## Introduction
 
-This is a desktop application for road-damage datection. This application
-exposes the models generated in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
+This is a desktop application for road-damage datection. This application exposes the models generated in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
 
-This project aids in obtaining a road-damage detection model for assessing
-potholes study.
+This project aids in obtaining a road-damage detection model for assessing potholes study.
 
-Here you will find how to speciallize YOLOv5 and YOLOv7 object detection 
-algorithms in road damage.
+Here you will find how to speciallize YOLOv5 and YOLOv7 object detection algorithms in road damage.
 
 
 ## Pre-requisites
@@ -41,8 +38,7 @@ environment:
 5. Configurar rutas en archivo ``rutas_cfg.env``. Crear el directorio asignado en la variable `RUTA_SALIDAS` si no existe.
 
 ## Use
-On Windows, run `iniciar_gui.bat` to open the GUI. Alternatively, you can run 
-`main.py` from within the activated environment:
+On Windows, run `iniciar_gui.bat` to open the GUI. Alternatively, you can run `main.py` from within the activated environment:
     ```
     .venv\Scripts\activate
     python main.py
@@ -55,6 +51,4 @@ Default password: `1234`
 2. Select an algorithm and its exposed parameters
 3. Click `Run`
 4. After processing is done, the output will be displayed to the right
-5. An email will be prefilled with a summary and the details of the inference.
-You can edit it there or after pressing the `Send` button, which will open it
-in your default email manager.
+5. An email will be prefilled with a summary and the details of the inference. You can edit it there or after pressing the `Send`  button, which will open it in your default email manager.
