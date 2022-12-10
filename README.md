@@ -39,13 +39,14 @@ environment:
 
 ## Use
 On Windows, run `iniciar_gui.bat` to open the GUI. Alternatively, you can run `main.py` from within the activated environment:
-    ```
-    .venv\Scripts\activate
-    python main.py
-    ```
+```
+.venv\Scripts\activate
+python main.py
+```
 
-Default user: `User`
-Default password: `1234`
+Default user: `User`.
+
+Default password: `1234`.
 
 1. Provide an input image, video or directory to process
 2. Select an algorithm and its exposed parameters
