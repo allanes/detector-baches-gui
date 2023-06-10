@@ -4,12 +4,14 @@ This is a desktop application for road-damage datection. This application expose
 
 This project aids in obtaining a road-damage detection model for assessing potholes study.
 
-Here you will find how to speciallize YOLOv5 and YOLOv7 object detection algorithms in road damage.
+Here you will find how to use specialized YOLOv5 and YOLOv7 object detection algorithms in road damage.
+
+![Screenshot](screenshots/Screenshot_1.png)
 
 
 ## Pre-requisites
 
-This application looks for the models in generated directly in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
+This application looks for the models generated directly in the [Backend repository](https://github.com/allanes/pothole-detector-backend).
 
 ## Installation
 
@@ -53,3 +55,9 @@ Default password: `1234`.
 3. Click `Run`
 4. After processing is done, the output will be displayed to the right
 5. An email will be prefilled with a summary and the details of the inference. You can edit it there or after pressing the `Send`  button, which will open it in your default email manager.
+
+## GUI breakdown
+
+After logging in, you will see an interface as the first image. These are the main parts:
+
+![Screenshot](screenshots/Screenshot_2.jpg)

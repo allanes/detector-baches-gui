@@ -1,4 +1,5 @@
 .venv
+.venv2
 .vscode
 static/output
 uploads
